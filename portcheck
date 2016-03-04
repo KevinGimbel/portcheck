@@ -1,0 +1,132 @@
+#!/bin/bash
+#
+# create ssl certs for vhost
+#
+
+# script variables
+version="0.0.1"
+author="Kevin Gimbel"
+author_url="<http://kevingimbel.com>"
+github_url="https://github.com/kevingimbel/portcheck"
+github_issues="$github_url/issues"
+
+# Default values for key generation
+program_name=$(basename "$0")
+
+# Color Variables and escaping hell
+green="\e[;92m"
+red="\e[;31m"
+blue="\e[;94m"
+reset="\e[;0m"
+
+# Check sign and cross sign
+checksign="$green✓$reset"
+cross="$red❌$reset"
+
+# Print out version information
+version() {
+  printf "%s\n" "Version $version" \
+  "by $author $author_url" \
+  "" \
+  "Report Issues on $github_issues"
+  exit
+}
+
+# Print out usage information
+usage() {
+  printf "%s\n" \
+  "Usage: $program_name -h host -p port" \
+  "Script to check if a remote server port can be accessed" \
+  "" \
+  "Options:" \
+
+  echo "
+    -u,--usage  & Show usage message
+    -v,--version & Show version and author info
+    -h,--host     & Enter remote server IP
+    -p,--port    & Remote port number
+  " | column -s\& -t
+  exit
+}
+
+# Show help for specific command
+show_help() {
+  cmd="$1"
+  case $cmd in
+    '-p' | '--port')
+      printf "%s\n" \
+      "Usage: $program_name -p port_number " \
+      "Sets the port number to check. Default is 80."\
+      "Examples: " \
+      "$program_name -p 22" \
+      "$program_name -p 80" \
+      "$program_name -p 1337"
+      ;;
+
+    '-h' | '--host')
+      printf "%s\n" \
+      "Usage: $program_name -h REMOTE_IP" \
+      "Sets the host on which to check a port. Default is localhost." \
+      "Examples: " \
+      "$program_name -h 123.456.789" \
+      "$program_name -h mywebsite.com" \
+      "$program_name -h 8.8.8.8"
+      ;;
+    *)
+    echo -e "$cross""Unable to find command $cmd"
+  esac
+  exit
+}
+
+if [ "--help" = "$2" ] || [ "-h" = "$2" ]; then
+  show_help "$1"
+fi
+
+main() {
+  # Check if we want to generate a key
+  if [ -z "$host" ]; then
+    host="localhost"
+  fi
+
+  # Check if we want to generate a key
+  if [ -z "$port" ]; then
+    port="22"
+  fi
+
+echo -e "Checking remote host $blue$host$reset:$green$port$reset"
+echo > /dev/tcp/$host/$port && echo -e "$checksign Port open" || echo -e "$cross Port closed"
+}
+
+# Read in all the arguments as long as there are any
+while (( "$#" )); do
+  arg=$1
+
+  case $arg in
+
+    '-u' | '--usage')
+      usage
+      ;;
+
+    '-i' | '--info')
+      info
+      ;;
+
+    '-v' | '--version')
+      version
+      ;;
+
+    '-p' | '--port')
+      port="$2"
+      ;;
+
+    '-h' | '--host')
+      host="$2"
+      ;;
+  esac
+# Shift arguments, this way all arguments can be operated on before
+# the main function is running.
+shift
+done
+
+# Run the main function after reading the inputs.
+main
